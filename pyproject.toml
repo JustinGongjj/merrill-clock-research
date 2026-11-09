@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "merrill-clock-lab"
+version = "0.2.0"
+description = "Public-data Merrill-clock cross-asset research and A-share company snapshot prototype"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.2", "requests>=2.31"]
+
+[project.optional-dependencies]
+market = ["yfinance>=0.2.40"]
+analysis = ["statsmodels>=0.14", "matplotlib>=3.7"]
+all = ["yfinance>=0.2.40", "statsmodels>=0.14", "matplotlib>=3.7"]
+test = ["pytest>=7.4"]
+
+[project.scripts]
+quantclock = "quantclock.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["quantclock*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

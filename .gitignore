@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local configuration
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.local
+
+# Build artifacts
+build/
+dist/
+site/
+
+# Generated reports and downloaded data
+outputs/
+data/raw/
+data/cache/
+data/private/
+data/user/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
