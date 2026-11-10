@@ -32,6 +32,42 @@ def cmd_sources(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_registry(args: argparse.Namespace) -> int:
+    """Show the full upstream catalogue with capabilities and live status."""
+    from . import registry as reg
+
+    rows = reg.registry_rows()
+    if args.matrix:
+        matrix = reg.capability_matrix()
+        for cap in reg.ALL_CAPABILITIES:
+            chain = matrix[cap]
+            print(f"\n{cap}  ({len(chain)} 个源)")
+            for i, sid in enumerate(chain, 1):
+                spec = reg.BY_ID[sid]
+                mark = "可用" if spec.available() else "不可用"
+                print(f"  {i:>2}. {sid:<16} tier={spec.tier} {spec.latency:<9} [{mark}]")
+        return 0
+
+    print(f"{'source_id':<16}{'tier':<6}{'latency':<10}{'available':<11}{'capabilities'}")
+    for row in rows:
+        caps = ", ".join(row["capabilities"])
+        print(f"{row['source_id']:<16}{row['tier']:<6}{row['latency']:<10}"
+              f"{str(row['available']):<11}{caps}")
+        if args.verbose:
+            print(f"    {row['display_name']}")
+            print(f"    {row['status_detail']}  |  {row['note']}")
+    return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    """Start the local backend data service (REST API)."""
+    from .server import DataService, serve
+
+    service = DataService(db_path=args.db, output_dir=args.output)
+    serve(host=args.host, port=args.port, state=service)
+    return 0
+
+
 def cmd_check(args: argparse.Namespace) -> int:
     for probe in check_connectivity(timeout=args.timeout):
         print(f"[{probe['status']:<12}] {probe['source']:<14} {probe['detail']}")
@@ -242,7 +278,12 @@ def cmd_dashboard(args: argparse.Namespace) -> int:
     return 0
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """Build the ``clock-data`` argument parser.
+
+    Kept separate from :func:`main` so the subcommand wiring can be tested
+    without executing any command.
+    """
     parser = argparse.ArgumentParser(
         prog="clock-data",
         description="Local financial database for the Merrill-clock research stack",
@@ -306,6 +347,25 @@ def main() -> int:
     dash.add_argument("--open", action="store_true", help="open the report in the default browser")
     dash.set_defaults(func=cmd_dashboard)
 
+    reg_parser = sub.add_parser(
+        "registry", help="show the upstream catalogue (capabilities, tier, live availability)")
+    reg_parser.add_argument("--matrix", action="store_true",
+                            help="print the capability -> source routing matrix")
+    reg_parser.add_argument("--verbose", action="store_true", help="include notes and status detail")
+    reg_parser.set_defaults(func=cmd_registry)
+
+    srv = sub.add_parser("serve", help="start the local backend data service (REST API)")
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=8765)
+    srv.add_argument("--output", default=None,
+                     help="directory holding clock_backtest.csv / cross_section_report.json")
+    srv.set_defaults(func=cmd_serve)
+
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
     args = parser.parse_args()
     return args.func(args)
 

@@ -23,10 +23,11 @@ if [ ! -x "$PY" ]; then
 fi
 "$PY" -m pip install --quiet --upgrade pip
 
-echo "→ 可编辑安装三个包"
+echo "→ 可编辑安装四个包"
 "$PY" -m pip install --quiet -e "$ROOT/packages/merrill-clock-quant"
 "$PY" -m pip install --quiet -e "$ROOT/packages/merrill-clock-factor-regression"
 "$PY" -m pip install --quiet -e "$ROOT/packages/clockdata"
+"$PY" -m pip install --quiet -e "$ROOT/packages/starmap"
 
 if [ "$WITH_EXTRA" = "1" ]; then
   echo "→ 安装扩展依赖（akshare / yfinance / statsmodels）"
@@ -46,6 +47,7 @@ checks = [
     ("quantclock", None),
     ("factorlab", None),
     ("clockdata", None),
+    ("starmap", None),
 ]
 failed = []
 for name, _ in checks:
@@ -75,7 +77,14 @@ fi
 
 echo ""
 echo "✓ 安装完成。已安装命令："
-ls "$VENV/bin" | grep -E "^(clock-data|merrill-clock-quant|merrill-clock-factor)$" || true
+ls "$VENV/bin" | grep -E "^(clock-data|merrill-clock-quant|merrill-clock-factor|starmap)$" || true
 echo ""
 echo "  启动研究台： $VENV/bin/clock-data run --output ./outputs/local-run"
+echo "  生成星图  ： $VENV/bin/starmap build 300136 --out ./outputs/starmap"
+echo "  启动后台  ： $VENV/bin/clock-data serve --port 8765"
 echo "  跑全部测试： cd $ROOT && $PY -m pytest"
+echo ""
+echo "  注：ccxt 2.x 与 curl-cffi 对 cffi 的版本要求存在冲突"
+echo "      （ccxt 要求 cffi==2.0.0，curl-cffi 要求 cffi>=2.1.1）。"
+echo "      本仓库保留 cffi>=2.1.1，实测 AkShare 与 CCXT 均可正常导入；"
+echo "      如遇 ccxt 导入报错，请优先排查 cffi 版本而非重装整个环境。"

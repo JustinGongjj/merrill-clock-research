@@ -6,8 +6,10 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="$ROOT/.venv/bin/python"
 CD="$ROOT/.venv/bin/clock-data"
+SM="$ROOT/.venv/bin/starmap"
 DB="${CLOCK_DATA_DB:-$HOME/.local/share/clockdata/finance.db}"
 OUT="$ROOT/outputs/local-run"
+STAR="$ROOT/outputs/starmap"
 DASH="$OUT/dashboard.html"
 export CLOCK_DATA_DB="$DB"
 
@@ -66,9 +68,26 @@ do_run()    { check_install || return 1; "$CD" --db "$DB" run --output "$OUT" --
 do_update() { check_install || return 1; "$CD" --db "$DB" sync --dataset all --continue-on-error; }
 do_status() { check_install || return 1; "$CD" --db "$DB" status; }
 do_check()  { check_install || return 1; "$CD" --db "$DB" check; }
+do_registry() { check_install || return 1; "$CD" --db "$DB" registry "$@"; }
 do_test()   {
   check_install || return 1
   cd "$ROOT" && "$PY" -m pytest
+}
+
+do_starmap() {
+  check_install || return 1
+  [ -x "$SM" ] || { echo "× 找不到 $SM，请先执行 bash $ROOT/scripts/setup.sh"; return 1; }
+  local symbol="${1:-300136}"
+  mkdir -p "$STAR"
+  "$SM" build "$symbol" --out "$STAR" --output "$OUT" || { echo "× 星图生成失败"; return 1; }
+  echo ""
+  bold "✓ 星图已生成："
+  echo "    $STAR/constellation_${symbol//\//_}.html"
+}
+
+do_serve() {
+  check_install || return 1
+  "$CD" --db "$DB" serve --host "${HOST:-127.0.0.1}" --port "${PORT:-8765}" --output "$OUT"
 }
 
 do_open() {
@@ -84,13 +103,17 @@ show_help() {
   start            一键启动：离线回测 + 因子归因 + 横截面检验 + 打开仪表盘
   run              只跑链路并打印结果，不生成/打开仪表盘
   report           不重算，用已有结果重新生成并打开仪表盘
+  starmap [代码]    生成科幻星图（默认 300136），输出到 outputs/starmap
+  serve            启动后台数据服务（REST API，默认 127.0.0.1:8765）
   update           联网更新本地金融数据库（全部数据源）
   status           查看数据覆盖区间、行数、同步日志
   check            探测各数据源连通性
-  test             跑三个包的完整测试套件
+  registry         查看 22 个上游数据源的能力矩阵与实时可用性
+  test             跑四个包的完整测试套件
   open             在访达里打开结果文件夹
 
   换数据库：export CLOCK_DATA_DB=/path/to/finance.db
+  换端口  ：export PORT=9000
 ────────────────────────────────────────────────────────────
 EOF
 }
@@ -99,9 +122,12 @@ case "${1:-start}" in
   ""|start)        do_start ;;
   run)             do_run ;;
   report|view)     do_report ;;
+  starmap)         shift; do_starmap "${1:-300136}" ;;
+  serve)           do_serve ;;
   update|sync)     do_update ;;
   status)          do_status ;;
   check)           do_check ;;
+  registry)        shift; do_registry "$@" ;;
   test)            do_test ;;
   open)            do_open ;;
   help|--help|-h)  show_help ;;

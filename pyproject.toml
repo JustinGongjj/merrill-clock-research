@@ -12,6 +12,7 @@ testpaths = [
     "packages/merrill-clock-quant/tests",
     "packages/merrill-clock-factor-regression/tests",
     "packages/clockdata/tests",
+    "packages/starmap/tests",
 ]
 # Each package ships a top-level `examples_*.py` helper that its own tests
 # import by name. Those imports worked when pytest ran from inside the package
@@ -20,6 +21,7 @@ pythonpath = [
     "packages/merrill-clock-quant",
     "packages/merrill-clock-factor-regression",
     "packages/clockdata",
+    "packages/starmap",
 ]
 addopts = "-q"
 
