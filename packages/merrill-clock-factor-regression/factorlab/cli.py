@@ -60,12 +60,33 @@ def cmd_check(args: argparse.Namespace) -> int:
         )
         ic_history[name] = rank_ic(factor, panel["forward_returns"], min_assets=args.min_assets)
 
+    is_ashare = (args.dataset == "ashare_prices") or (
+        args.prices_csv is not None and "ashare" in str(args.prices_csv).lower()
+    )
+    universe_type = (
+        "A-share stock universe (real adjusted prices via AkShare)"
+        if is_ashare else
+        "ETF price proxies, NOT an A-share stock universe"
+    )
+    if is_ashare:
+        caveats = [
+            "横截面为 A股真实前复权价样本；IC 数值可与券商 A股因子 IC 同口径比较",
+            "因子仅由月频复权价构造，未使用财务、行业、市值、Barra 数据；结果为价量类因子的描述性统计",
+            "IC 与 Fama-MacBeth t 值未做序列相关校正，只作描述性统计",
+            "样本存在不同上市日期，早期月份可交易标的数量较少，已按 min_assets 过滤",
+        ]
+    else:
+        caveats = [
+            "横截面为 9 只 ETF 代理，不是股票池；IC 数值不可与券商 A 股因子 IC 横向比较",
+            "因子仅由月频复权价构造，未使用财务、行业、市值、Barra 数据",
+            "IC 与 Fama-MacBeth t 值未做序列相关校正，只作描述性统计",
+        ]
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "track": "cross_sectional_single_factor_test",
         "data_source": ("local_csv" if args.prices_csv else f"clockdata:{args.dataset}"),
         "universe": panel["universe"],
-        "universe_type": "ETF price proxies, NOT an A-share stock universe",
+        "universe_type": universe_type,
         "sample_start": panel["sample_start"],
         "sample_end": panel["sample_end"],
         "n_months": panel["n_months"],
@@ -73,11 +94,7 @@ def cmd_check(args: argparse.Namespace) -> int:
         "min_assets": args.min_assets,
         "preprocess": not args.no_preprocess,
         "factors": reports,
-        "caveats": [
-            "横截面为 9 只 ETF 代理，不是股票池；IC 数值不可与券商 A 股因子 IC 横向比较",
-            "因子仅由月频复权价构造，未使用财务、行业、市值、Barra 数据",
-            "IC 与 Fama-MacBeth t 值未做序列相关校正，只作描述性统计",
-        ],
+        "caveats": caveats,
     }
     _write_json(args.output_json, payload)
     if args.ic_csv:

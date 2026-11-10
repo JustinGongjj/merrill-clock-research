@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 
+import pandas as pd
+
 from .backtest import performance_metrics, prices_to_monthly_returns, run_backtest
 from .calibration import phase_diagnostics, temperature_sensitivity
 from .data import fetch_fred_panel, fetch_market_prices, yahoo_healthy
@@ -53,6 +55,35 @@ def _load_local(args: argparse.Namespace):
         raise RuntimeError(f"Local fred_macro dataset is missing columns: {sorted(missing)}")
     print(f"Reading from local financial database {db} (no network calls)")
     return macro, prices
+
+
+def load_cash_rate(args: argparse.Namespace, index: pd.DatetimeIndex) -> pd.Series | None:
+    """Best-effort monthly risk-free returns aligned to ``index``.
+
+    Source priority: local DB ``tb3ms`` -> live FRED TB3MS (unauthenticated).
+    Returns ``None`` when neither is available so the caller keeps its existing
+    BIL / zero-cash assumption. The 3-month T-bill is the correct USD cash
+    proxy for this cross-asset book (SPY/IEF/GLD/DBC are USD instruments).
+    """
+    # 1) local database (preferred: reproducible, offline)
+    try:
+        from clockdata.store import Store
+        from clockdata.providers import tb3ms_to_monthly_return
+        db = Path(args.db) if args.db else default_db_path()
+        tb = Store(db).load_frame("tb3ms")
+        if tb is not None and not tb.empty:
+            return tb3ms_to_monthly_return(tb, pd.DatetimeIndex(index))
+    except Exception:  # noqa: BLE001 - cash is optional; never abort the run
+        pass
+    # 2) live FRED unauthenticated CSV (no key needed)
+    try:
+        from clockdata.providers import fetch_tb3ms, tb3ms_to_monthly_return
+        tb = fetch_tb3ms(start=str(pd.Timestamp(index.min()).date()))
+        if tb is not None and not tb.empty:
+            return tb3ms_to_monthly_return(tb, pd.DatetimeIndex(index))
+    except Exception:  # noqa: BLE001
+        pass
+    return None
 
 
 def load_market_inputs(args: argparse.Namespace) -> tuple[object, object]:
@@ -178,15 +209,22 @@ def run_research(args: argparse.Namespace) -> int:
     # before BIL exists, with the assumption recorded in metrics.json.
     asset_map = dict(core_map)
     bil_complete = "BIL" in usable.columns and bool(usable["BIL"].notna().all())
-    if args.cash_policy == "require_bil" and not bil_complete:
-        raise RuntimeError("BIL history is incomplete; use --cash-policy auto or zero-cash")
-    if args.cash_policy in ("zero",) or not bil_complete:
+    cash_rate = None if args.cash_policy == "zero" else load_cash_rate(args, usable.index)
+    if args.cash_policy == "zero":
         usable[CASH_ZERO_COLUMN] = 0.0
         asset_map["cash"] = CASH_ZERO_COLUMN
-        cash_note = "zero-return cash accrual; understates T-bill income before BIL history starts"
-    else:
+        cash_note = "explicit zero-return cash (user override)"
+    elif cash_rate is not None:
+        usable[CASH_ZERO_COLUMN] = cash_rate.reindex(usable.index).fillna(0.0)
+        asset_map["cash"] = CASH_ZERO_COLUMN
+        cash_note = "TB3MS 3-month T-bill monthly return (FRED latest-vintage; not point-in-time)"
+    elif bil_complete:
         asset_map["cash"] = "BIL"
         cash_note = "BIL adjusted-price proxy"
+    else:
+        usable[CASH_ZERO_COLUMN] = 0.0
+        asset_map["cash"] = CASH_ZERO_COLUMN
+        cash_note = "zero-return cash accrual; TB3MS and BIL both unavailable"
 
     features = make_clock_features(
         macro["industrial_production"], macro["cpi"], usable.index,

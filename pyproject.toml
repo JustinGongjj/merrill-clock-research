@@ -1,0 +1,26 @@
+[tool.pytest.ini_options]
+# Monorepo root config. Running `pytest` from the repo root collects all three
+# packages; running it inside a package directory still uses that package's
+# own pyproject.toml (unchanged behaviour).
+testpaths = [
+    "packages/merrill-clock-quant/tests",
+    "packages/merrill-clock-factor-regression/tests",
+    "packages/clockdata/tests",
+]
+# Each package ships a top-level `examples_*.py` helper that its own tests
+# import by name. Those imports worked when pytest ran from inside the package
+# directory (CWD on sys.path); from the monorepo root we add them explicitly.
+pythonpath = [
+    "packages/merrill-clock-quant",
+    "packages/merrill-clock-factor-regression",
+    "packages/clockdata",
+]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
