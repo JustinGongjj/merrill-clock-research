@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "merrill-clock-quant"
+version = "0.1.0"
+description = "Research code for Merrill-clock states and cross-asset backtests"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "JustinGongjj"}]
+license = {file = "LICENSE"}
+dependencies = ["numpy>=1.24", "pandas>=2.2", "requests>=2.31", "urllib3>=1.26"]
+
+[project.optional-dependencies]
+market = ["yfinance>=0.2.40"]
+test = ["pytest>=7.4"]
+
+[project.scripts]
+merrill-clock-quant = "quantclock.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["quantclock*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
