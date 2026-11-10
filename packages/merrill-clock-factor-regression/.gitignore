@@ -31,3 +31,7 @@ data/user/
 .DS_Store
 .idea/
 .vscode/
+
+# pytest temporary dirs
+.tmp/
+.pytest_tmp/

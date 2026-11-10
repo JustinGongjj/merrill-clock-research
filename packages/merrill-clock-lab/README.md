@@ -1,3 +1,10 @@
+> **📦 本仓库已并入 monorepo**
+> 代码已迁移至 **https://github.com/JustinGongjj/merrill-clock-research** 的
+> `packages/merrill-clock-lab/`（`git subtree` 保留完整历史）。
+> 本仓库独有的 A 股个股研究模块（`company_data` / `company_analysis` / `company_report`）
+> 已迁入活跃包 `packages/merrill-clock-quant/`，并新增 `merrill-clock-quant company` 子命令。
+> 后续改动以 monorepo 为准；本仓库仅作归档保留。
+
 # Merrill Clock Lab
 
 一个用于公开数据研究的 Python 原型：把美林时钟式宏观状态分类、跨资产回测、因子回归、预测基线和离线强化学习实验放在同一套可检查代码中；另含 A 股个股研究快照模块。它是研究与教学工具，不是投资建议或交易系统。

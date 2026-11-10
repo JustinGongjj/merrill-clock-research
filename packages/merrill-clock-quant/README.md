@@ -1,3 +1,8 @@
+> **📦 本仓库已并入 monorepo**
+> 代码已迁移至 **https://github.com/JustinGongjj/merrill-clock-research** 的
+> `packages/merrill-clock-quant/`（`git subtree` 保留完整历史）。
+> 后续改动以 monorepo 为准；本仓库仅作归档保留。
+
 # Merrill Clock Quant
 
 **Author:** JustinGongjj · **License:** MIT
