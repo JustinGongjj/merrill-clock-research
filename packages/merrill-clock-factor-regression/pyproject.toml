@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "merrill-clock-factor-regression"
+version = "0.1.0"
+description = "Standalone factor-regression and historical attribution research"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "JustinGongjj"}]
+license = {file = "LICENSE"}
+dependencies = ["numpy>=1.24", "pandas>=2.2", "requests>=2.31", "urllib3>=1.26"]
+
+[project.optional-dependencies]
+analysis = ["statsmodels>=0.14"]
+test = ["pytest>=7.4", "statsmodels>=0.14"]
+
+[project.scripts]
+merrill-clock-factor = "factorlab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["factorlab*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

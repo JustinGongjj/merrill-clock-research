@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local environments and credentials
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.local
+
+# Build products and generated results
+build/
+dist/
+outputs/
+*.html
+
+# Downloaded/private data and caches
+data/raw/
+data/cache/
+data/private/
+data/user/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
