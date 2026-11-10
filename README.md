@@ -2,6 +2,12 @@
 
 把原先分散在三个 GitHub 仓库的代码合并为一个仓库，便于统一维护、统一测试、统一发布。
 
+**仓库地址**：https://github.com/JustinGongjj/merrill-clock-research
+
+> 合并自三个独立仓库（历史通过 `git subtree` 完整保留）：
+> `merrill-clock-quant` · `merrill-clock-factor-regression` · `clockdata`
+> 原两个 GitHub 仓库仍在维护，但后续改动以本 monorepo 为准。
+
 ```
 clock-research-monorepo/
 ├── packages/
@@ -56,9 +62,11 @@ bash scripts/setup.sh --with-extra
 # 2. 一键跑完整链路（全程离线，用本地数据库）
 bash scripts/start.sh
 
-# 3. 跑全部测试
+# 3. 跑全部测试（143 passed, 3 skipped）
 .venv/bin/python -m pytest
 ```
+
+装好后全局命令 `clock` 会自动优先使用本 monorepo 环境；本仓库不可用时自动回退到旧环境。
 
 ## 数据
 
