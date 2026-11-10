@@ -10,6 +10,8 @@ import pandas as pd
 
 from .backtest import performance_metrics, prices_to_monthly_returns, run_backtest
 from .calibration import phase_diagnostics, temperature_sensitivity
+from .company_analysis import build_company_snapshot
+from .company_report import write_snapshot
 from .data import fetch_fred_panel, fetch_market_prices, yahoo_healthy
 from .macro import make_clock_features
 from .signals import default_research_tilts, map_regimes_to_assets, regime_probabilities
@@ -312,9 +314,39 @@ def run_research(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_company_snapshot(args: argparse.Namespace) -> int:
+    """Build a public-data, five-dimension A-share company research snapshot.
+
+    Reads only public endpoints (Eastmoney quote/flow/disclosure pages plus the
+    FRED macro context). No orders are placed and no composite recommendation
+    score is produced -- the five dimensions stay separate by design.
+    """
+    print(f"Fetching public A-share data for {args.code}; no orders will be placed...")
+    summary = build_company_snapshot(
+        code=args.code,
+        start_date=args.start,
+        benchmark_code=args.benchmark,
+        flow_limit=args.flow_limit,
+        announcement_limit=args.announcement_limit,
+        policy_file=args.policy_file,
+        include_us_clock=not args.skip_us_clock,
+        flow_csv=args.flow_csv,
+    )
+    paths = write_snapshot(args.output, summary)
+    clock = summary.get("merrill_clock", {})
+    print(json.dumps({
+        "security": f"{summary['metadata'].get('name')} ({args.code})",
+        "price_range": [summary["metadata"].get("price_start"), summary["metadata"].get("price_end")],
+        "dimensions": ["technical", "vendor flow", "public disclosures",
+                       "trading sentiment proxy", "policy keyword watch"],
+        "merrill_clock": clock.get("phase_cn", clock.get("note")),
+        "output": paths,
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="merrill-clock-quant",
         description="Public-data Merrill-clock cross-asset research baseline (not trading advice)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -339,6 +371,29 @@ def main() -> int:
     run.add_argument("--db", default=None,
                      help="SQLite path for --data-source local (env: CLOCK_DATA_DB)")
     run.set_defaults(func=run_with_fallback)
+
+    company = sub.add_parser(
+        "company",
+        help="build an A-share company five-dimension research snapshot (public data only)",
+    )
+    company.add_argument("--code", default="300136", help="6-digit A-share code; default 300136")
+    company.add_argument("--start", default="2023-01-01", help="daily history start date (YYYY-MM-DD)")
+    company.add_argument("--benchmark", default="399006",
+                         help="benchmark index code; default 399006 ChiNext Index")
+    company.add_argument("--flow-limit", type=int, default=100,
+                         help="provider fund-flow history limit (max 100)")
+    company.add_argument("--announcement-limit", type=int, default=20,
+                         help="number of recent disclosure titles")
+    company.add_argument("--flow-csv", default=None,
+                         help="optional local fund-flow CSV; must contain the documented schema")
+    company.add_argument("--policy-file", default=None,
+                         help="policy watchlist CSV; defaults to data/policy_watchlist.csv")
+    company.add_argument("--skip-us-clock", action="store_true",
+                         help="skip the legacy US FRED Merrill-clock context")
+    company.add_argument("--output", default="./outputs/company",
+                         help="snapshot output directory")
+    company.set_defaults(func=run_company_snapshot)
+
     args = parser.parse_args()
     return args.func(args)
 
