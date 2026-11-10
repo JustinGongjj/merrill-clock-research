@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# pytest
+.pytest_cache/
+.pytest_tmp/
+.tmp/
+.pytest_tmp/
+
+# local runtime
+*.db
+*.sqlite
+*.sqlite3
+outputs/
+.env
+.DS_Store
