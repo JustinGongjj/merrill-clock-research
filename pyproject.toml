@@ -1,7 +1,13 @@
 [tool.pytest.ini_options]
 # Monorepo root config. Running `pytest` from the repo root collects all three
-# packages; running it inside a package directory still uses that package's
-# own pyproject.toml (unchanged behaviour).
+# active packages; running it inside a package directory still uses that
+# package's own pyproject.toml (unchanged behaviour).
+#
+# `packages/merrill-clock-lab` is an archived snapshot kept for history only
+# (it ships the same `quantclock` package name as merrill-clock-quant and its
+# unique modules were already merged into the active package). Its tests are
+# deliberately not collected: they duplicate the active package's suites and
+# would collide on module names.
 testpaths = [
     "packages/merrill-clock-quant/tests",
     "packages/merrill-clock-factor-regression/tests",

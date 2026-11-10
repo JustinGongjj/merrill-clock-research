@@ -4,9 +4,9 @@
 
 **仓库地址**：https://github.com/JustinGongjj/merrill-clock-research
 
-> 合并自三个独立仓库（历史通过 `git subtree` 完整保留）：
-> `merrill-clock-quant` · `merrill-clock-factor-regression` · `clockdata`
-> 原两个 GitHub 仓库仍在维护，但后续改动以本 monorepo 为准。
+> 合并自四个独立仓库（历史通过 `git subtree` 完整保留）：
+> `merrill-clock-quant` · `merrill-clock-factor-regression` · `clockdata` · `merrill-clock-lab`
+> 原三个 GitHub 仓库仍在维护，但后续改动以本 monorepo 为准。
 
 ```
 clock-research-monorepo/
@@ -29,14 +29,17 @@ clock-research-monorepo/
 │   │       ├── regression.py           # FF5 + Newey-West HAC
 │   │       └── cli.py
 │   │
-│   └── clockdata/                      # 本地金融数据库与数据源
-│       └── clockdata/
-│           ├── store.py                # SQLite 存储层
-│           ├── sources.py              # FRED / Yahoo / FF5 / AkShare / WindPy
-│           ├── providers.py            # A 股行情、TB3MS 现金 sleeve、ALFRED vintage
-│           ├── manifest.py             # 统一研究契约
-│           ├── dashboard.py            # 自包含 HTML 仪表盘
-│           └── cli.py                  # 一键链路编排
+│   ├── clockdata/                      # 本地金融数据库与数据源
+│   │   └── clockdata/
+│   │       ├── store.py                # SQLite 存储层
+│   │       ├── sources.py              # FRED / Yahoo / FF5 / AkShare / WindPy
+│   │       ├── providers.py            # A 股行情、TB3MS 现金 sleeve、ALFRED vintage
+│   │       ├── manifest.py             # 统一研究契约
+│   │       ├── dashboard.py            # 自包含 HTML 仪表盘
+│   │       └── cli.py                  # 一键链路编排
+│   │
+│   └── merrill-clock-lab/              # ⚠️ 历史归档，勿直接安装（见 ARCHIVED.md）
+│       └── quantclock/                 #   独有模块已并入 merrill-clock-quant
 ├── scripts/
 │   ├── setup.sh                        # 一键安装
 │   └── start.sh                        # 一键启动
@@ -47,11 +50,21 @@ clock-research-monorepo/
 
 | 包 | 职责 | 命令 |
 |---|---|---|
-| `merrill-clock-quant` | 宏观相位 → 资产映射 → 信号 → 组合回测 | `merrill-clock-quant` |
+| `merrill-clock-quant` | 宏观相位 → 资产映射 → 信号 → 组合回测；A股个股五维研究快照 | `merrill-clock-quant` |
 | `merrill-clock-factor-regression` | 单因子有效性检验 + 组合收益 FF5 归因 | `merrill-clock-factor` |
 | `clockdata` | 本地 SQLite 金融数据库、数据源适配、仪表盘、研究契约 | `clock-data` |
 
 `clockdata` 是编排层：`clock-data run` 会依次调用 `quantclock.cli`（回测）、`factorlab.cli`（横截面检验与归因），最后生成仪表盘。
+
+### A股个股研究快照
+
+`merrill-clock-quant company` 生成单只 A 股的五维研究快照（技术面 / 资金流 / 公开披露 / 量价情绪代理 / 政策关键词观察），各维度独立呈现，不合成荐股分数：
+
+```bash
+merrill-clock-quant company --code 300136 --start 2024-01-01 --output ./outputs/company
+```
+
+产出 `snapshot.md`（手机友好）、`snapshot.html`（自包含）、`metrics.json`、`source_manifest.json` 及各维度原始 CSV。数据来自东方财富公开接口与本地政策观察表，**不构成投资建议**。
 
 ## 快速开始
 
